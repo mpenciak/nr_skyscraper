@@ -1,0 +1,6 @@
+[package]
+name = "nr_skyscraper"
+type = "bin"
+authors = [""]
+
+[dependencies]
