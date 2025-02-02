@@ -13,7 +13,7 @@ global SIGMA: Field = 9915499612839321149637521777990102151350674507940716049588
 
 fn rl(u: u8) -> u8 {
     let top_bit = u >> 7;
-    (u << 1) & top_bit
+    (u << 1) | top_bit
 }
 
 fn rotate_left<let N: u8>(u: u8) -> u8 {
@@ -99,12 +99,18 @@ pub fn main(a: Field) -> pub Field {
 
 #[test]
 fn test_rl() {
-    assert(true);
+    assert_eq(rl(1), 2);
+    assert_eq(rl(170), 85);
+    assert_eq(rl(85), 170);
+    assert_eq(rl(128), 1);
 }
 
 #[test]
 fn test_rotate_left() {
-    assert(true);
+    assert_eq(rotate_left::<1>(1), 2);
+    assert_eq(rotate_left::<2>(1), 4);
+    assert_eq(rotate_left::<2>(85), 85);
+    assert_eq(rotate_left::<5>(144), 18);
 }
 
 #[test]
@@ -131,5 +137,4 @@ fn test_permute() {
 fn test_compress() {
     assert(true);
 }
-
 
