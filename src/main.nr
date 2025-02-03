@@ -125,7 +125,9 @@ fn test_bar() {
 
 #[test]
 fn test_square() {
-    assert(true);
+    assert_eq(square(1), SIGMA);
+    assert_eq(square(0), 0);
+    assert_eq(square(17), 289 * SIGMA);
 }
 
 #[test]
