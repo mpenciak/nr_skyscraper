@@ -1,0 +1,11 @@
+name = "skyscraper"
+version = "0.1.0"
+defaultTargets = ["Skyscraper"]
+
+[[lean_lib]]
+name = "Skyscraper"
+
+[[require]]
+name = "Lampe"
+git = "https://github.com/reilabs/lampe/"
+subDir = "Lampe"
