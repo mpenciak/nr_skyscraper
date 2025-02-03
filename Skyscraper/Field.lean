@@ -5,6 +5,7 @@ namespace Skyscraper
 
 structure Field (_p : Nat) where
   val : Nat
+deriving Repr
 
 variable {p : Nat}
 
@@ -24,7 +25,9 @@ namespace Field
 
 def fromLeBytes (b : ByteArray) : Field p := b.toNat
 
-def toLeBytes (f : Field p) : ByteArray := f.val.toByteArray
+def toLeBytes (f : Field p) : ByteArray :=
+  let bytes := ByteArray.mkZero 32
+  f.val.toByteArray.copySlice 0 bytes 0 32
 
 end Field
 

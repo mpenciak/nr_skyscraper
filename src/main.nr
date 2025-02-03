@@ -34,7 +34,7 @@ fn sbox(v: u8) -> u8 {
 }
 
 fn bar(a: Field) -> Field {
-    let bytes = a.to_le_bytes();
+    let bytes: [u8; 32] = a.to_le_bytes();
     // MP: Is there a slick way of doing this with Noir?
     let left: [u8; 16] = [
         bytes[0], bytes[1], bytes[2], bytes[3], bytes[4], bytes[5], bytes[6], bytes[7], bytes[8],
@@ -115,12 +115,18 @@ fn test_rotate_left() {
 
 #[test]
 fn test_sbox() {
-    assert(true);
+    assert_eq(sbox(34), 34);
+    assert_eq(sbox(19), 3);
+    assert_eq(sbox(254), 250);
+    assert_eq(sbox(219), 75);
 }
 
 #[test]
 fn test_bar() {
-    assert(true);
+    assert_eq(bar(0), 0);
+    assert_eq(bar(34), 11569600475311907757754736652680119189504);
+    assert_eq(bar(123456789), 227189284417390087395336095752969451572618592256);
+    assert_eq(bar(10066193), 380599362036098173552978694294891540917518336);
 }
 
 #[test]
@@ -128,6 +134,8 @@ fn test_square() {
     assert_eq(square(1), SIGMA);
     assert_eq(square(0), 0);
     assert_eq(square(17), 289 * SIGMA);
+    assert_eq(square(123456789),
+    8942935588434003749808093666007174270110007839183014576630749919696542333842);
 }
 
 #[test]

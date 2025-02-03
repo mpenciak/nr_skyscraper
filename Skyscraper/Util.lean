@@ -8,8 +8,12 @@ where
       have : n / 256 < n := Nat.div_lt_self this (by decide)
       aux (acc.push (UInt8.ofNat (n % 256))) (n / 256)
 
+-- def ByteArray.toNat (b : ByteArray) : Nat :=
 def ByteArray.toNat (b : ByteArray) : Nat :=
-  b.foldl (fun acc x => acc * 256 + x.toNat) 0 -- TODO: This isn't right, this is Big Endian :(
+  b.data.reverse.foldl (fun acc x => acc * 256 + x.toNat) 0
+
+def ByteArray.mkZero (len : Nat) : ByteArray :=
+  ⟨Array.mkArray len 0⟩
 
 def UInt8.not (a : UInt8) : UInt8 := ⟨a.toBitVec.not⟩
 

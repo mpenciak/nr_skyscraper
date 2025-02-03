@@ -20,7 +20,8 @@ def RC : Array AltBN128 := #[
 def SIGMA : AltBN128 := 9915499612839321149637521777990102151350674507940716049588462388200839649614
 
 def sbox (v : UInt8) : UInt8 :=
-  v ^^^ ((!!! v).rotateLeft 1 ^^^ v.rotateLeft 2 ^^^ v.rotateLeft 3).rotateLeft 1
+  v ^^^ ((!!! v).rotateLeft 1 &&& v.rotateLeft 2 &&& v.rotateLeft 3).rotateLeft 1
+
 
 def bar (a : AltBN128) : AltBN128 :=
   let bytes := a.toLeBytes
@@ -37,6 +38,7 @@ def square (a : AltBN128) : AltBN128 :=
 structure State where
   left : AltBN128
   right : AltBN128
+deriving Repr
 
 def permute (s : State) : State :=
   let (l, r) := (s.left, s.right)
@@ -59,6 +61,8 @@ def new (iv : ByteArray) : State :=
   { left := 0, right := felt }
 
 def permute (s : State) : State := Skyscraper.permute s
+
+#eval permute ⟨0, 0⟩
 
 end State
 
