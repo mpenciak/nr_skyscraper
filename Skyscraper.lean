@@ -62,8 +62,6 @@ def new (iv : ByteArray) : State :=
 
 def permute (s : State) : State := Skyscraper.permute s
 
-#eval permute ⟨0, 0⟩
-
 end State
 
 def compress (l r : AltBN128) : AltBN128 :=

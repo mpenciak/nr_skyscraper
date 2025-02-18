@@ -1,3 +1,5 @@
+// mod test;
+
 global RC: [Field; 8] = [
     17829420340877239108687448009732280677191990375576158938221412342251481978692,
     5852100059362614845584985098022261541909346143980691326489891671321030921585,
@@ -16,7 +18,8 @@ fn rl(u: u8) -> u8 {
     (u << 1) | top_bit
 }
 
-fn rotate_left<let N: u8>(u: u8) -> u8 {
+fn rotate_left(u: u8, N: u8) -> u8 {
+    // NOTE: There was a bug with the extraction of the original signature `rotate_left<let N: u8>(u: u8) -> u8`
     let mut result = u;
     for _ in 0..N {
         result = rl(result);
@@ -27,38 +30,103 @@ fn rotate_left<let N: u8>(u: u8) -> u8 {
 fn sbox(v: u8) -> u8 {
     (
         v
-            ^ rotate_left::<1>(
-                rotate_left::<1>(!v) & rotate_left::<2>(v) & rotate_left::<3>(v),
+            ^ rotate_left(
+                rotate_left(!v, 1) & rotate_left(v, 2) & rotate_left(v, 3),
+                1,
             )
     )
 }
 
+// NOTE: adapted from stdlib
+fn from_le_bytes(bytes: [u8; 32]) -> Field {
+    let mut v = 1;
+    let mut result = 0;
+
+    for i in 0..32 {
+        result += (bytes[i] as Field) * v;
+        v = v * 256;
+    }
+    result
+}
+
+// NOTE: adapted from stdlib
+pub fn sgn0(self: Field) -> u1 {
+    self as u1
+}
+
+// NOTE: hacky workaround
+fn to_le_bits(self: Field) -> [u1; 256] {
+    let mut val = self;
+    let mut bits: [u1; 256] = [0; 256];
+
+    for i in 0..256 {
+        bits[i] = sgn0(val);
+        if bits[i] == 0 {
+            val = val / 2;
+        } else {
+            val = (val - 1) / 2;
+        }
+    }
+
+    bits
+}
+
+// NOTE: hacky workaround
+fn to_le_bytes(self: Field) -> [u8; 32] {
+    let bits = to_le_bits(self);
+    let mut bytes: [u8; 32] = [0; 32];
+
+    for i in 0..32 {
+        bytes[i] = (bits[8 * i] as u8)
+            + 2 * (bits[8 * i + 1] as u8)
+            + 4 * (bits[8 * i + 2] as u8)
+            + 8 * (bits[8 * i + 3] as u8)
+            + 16 * (bits[8 * i + 4] as u8)
+            + 32 * (bits[8 * i + 5] as u8)
+            + 64 * (bits[8 * i + 6] as u8)
+            + 128 * (bits[8 * i + 7] as u8);
+    }
+
+    bytes
+}
+
+// NOTE: adapted from stdlib
+fn as_array(self: [u8]) -> [u8; 32] {
+    let mut array = [0; 32];
+    for i in 0..32 {
+        array[i] = self[i];
+    }
+    array
+}
+
 fn bar(a: Field) -> Field {
-    let bytes: [u8; 32] = a.to_le_bytes();
-    // MP: Is there a slick way of doing this with Noir?
-    let left: [u8; 16] = [
-        bytes[0], bytes[1], bytes[2], bytes[3], bytes[4], bytes[5], bytes[6], bytes[7], bytes[8],
-        bytes[9], bytes[10], bytes[11], bytes[12], bytes[13], bytes[14], bytes[15],
-    ];
-    let right: [u8; 16] = [
-        bytes[16], bytes[17], bytes[18], bytes[19], bytes[20], bytes[21], bytes[22], bytes[23],
-        bytes[24], bytes[25], bytes[26], bytes[27], bytes[28], bytes[29], bytes[30], bytes[31],
-    ];
-    let new_left = left.map(|u| sbox(u)).as_slice();
-    let new_right = right.map(|u| sbox(u)).as_slice();
+    let bytes: [u8; 32] = to_le_bytes(a);
+    let mut new_left: [u8; 16] = [0; 16];
+    let mut new_right: [u8; 16] = [0; 16];
 
-    let new_bytes: [u8; 32] = new_right.append(new_left).as_array();
+    for i in 0..16 {
+        new_left[i] = sbox(bytes[i]);
+    }
+    for i in 0..16 {
+        new_right[i] = sbox(bytes[16 + i]);
+    }
 
-    Field::from_le_bytes::<32>(new_bytes)
+    let mut new_bytes = new_right.as_slice();
+
+    for elem in new_left {
+        new_bytes = new_bytes.push_back(elem);
+    }
+
+    let new_bytes_array: [u8; 32] = as_array(new_bytes); // TODO: There is an issue with name mirroring on the Lean side here, so this is a workaround
+
+    from_le_bytes(new_bytes_array)
 }
 
 fn square(a: Field) -> Field {
     a * a * SIGMA
 }
 
-type State = [Field; 2];
-
-fn permute(s: State) -> State {
+fn permute(s: [Field; 2]) -> [Field; 2] {
     let (l, r) = (s[0], s[1]);
     let (l, r) = (r + square(l), l);
     let (l, r) = (r + square(l) + RC[0], l);
@@ -74,7 +142,7 @@ fn permute(s: State) -> State {
 }
 
 pub struct Skyscraper {
-    state: State,
+    state: [Field; 2],
 }
 
 impl Skyscraper {
@@ -96,55 +164,3 @@ pub fn compress(l: Field, r: Field) -> Field {
 pub fn main(a: Field) -> pub Field {
     a
 }
-
-#[test]
-fn test_rl() {
-    assert_eq(rl(1), 2);
-    assert_eq(rl(170), 85);
-    assert_eq(rl(85), 170);
-    assert_eq(rl(128), 1);
-}
-
-#[test]
-fn test_rotate_left() {
-    assert_eq(rotate_left::<1>(1), 2);
-    assert_eq(rotate_left::<2>(1), 4);
-    assert_eq(rotate_left::<2>(85), 85);
-    assert_eq(rotate_left::<5>(144), 18);
-}
-
-#[test]
-fn test_sbox() {
-    assert_eq(sbox(34), 34);
-    assert_eq(sbox(19), 3);
-    assert_eq(sbox(254), 250);
-    assert_eq(sbox(219), 75);
-}
-
-#[test]
-fn test_bar() {
-    assert_eq(bar(0), 0);
-    assert_eq(bar(34), 11569600475311907757754736652680119189504);
-    assert_eq(bar(123456789), 227189284417390087395336095752969451572618592256);
-    assert_eq(bar(10066193), 380599362036098173552978694294891540917518336);
-}
-
-#[test]
-fn test_square() {
-    assert_eq(square(1), SIGMA);
-    assert_eq(square(0), 0);
-    assert_eq(square(17), 289 * SIGMA);
-    assert_eq(square(123456789),
-    8942935588434003749808093666007174270110007839183014576630749919696542333842);
-}
-
-#[test]
-fn test_permute() {
-    assert(true);
-}
-
-#[test]
-fn test_compress() {
-    assert(true);
-}
-

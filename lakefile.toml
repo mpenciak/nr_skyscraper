@@ -8,4 +8,5 @@ name = "Skyscraper"
 [[require]]
 name = "Lampe"
 git = "https://github.com/reilabs/lampe/"
+rev = "main"
 subDir = "Lampe"
