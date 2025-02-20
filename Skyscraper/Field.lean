@@ -1,34 +1,32 @@
-import Mathlib
-import Skyscraper.Util
+import Lampe
+
+open Lampe
+
+def p := 21888242871839275222246405745257275088548364400416034343698204186575808495617 - 1
+
+axiom pPrime : Nat.Prime (p + 1) -- TODO: Should be able to prove this at some point
 
 namespace Skyscraper
 
-structure Field (_p : Nat) where
-  val : Nat
-deriving Repr
+abbrev bnField := Fp ⟨p, pPrime⟩
 
-variable {p : Nat}
+instance : ToString bnField where
+  toString b := s!"{b.val}"
 
-instance : Coe Nat (Field p) where
-  coe x := ⟨x % p⟩
+instance : Repr bnField where
+  reprPrec b _ := toString b
 
-instance {n} : OfNat (Field p) n where
-  ofNat := n
+namespace bnField
 
-instance : Add (Field p) where
-  add x y := (x.val + y.val) % p
+def fromLeBytes (b : List (U 8)) : bnField :=
+  let rec aux (b : List (U 8)) (acc : bnField) : bnField :=
+    match b with
+    | [] => acc
+    | b :: bs => aux bs (256 * acc + b.toNat)
+  aux b 0
 
-instance : Mul (Field p) where
-  mul x y := (x.val * y.val) % p
+def toLeBytes (f : bnField) : List (U 8) := Lampe.toLeBytes f
 
-namespace Field
-
-def fromLeBytes (b : ByteArray) : Field p := b.toNat
-
-def toLeBytes (f : Field p) : ByteArray :=
-  let bytes := ByteArray.mkZero 32
-  f.val.toByteArray.copySlice 0 bytes 0 32
-
-end Field
+end bnField
 
 end Skyscraper

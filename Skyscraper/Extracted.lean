@@ -2,14 +2,23 @@ import Lampe
 
 open Lampe
 
-namespace Test
+namespace Extracted
 
 nr_struct_def Skyscraper<> {
     state : [Field; 2]
 }
 
+-- NOTE: This is not how things are literally extracted, workaround for not dealing with a
+-- particular characteristic by avoiding using negatives
 nr_def «RC»<>() -> [Field; 8] {
-    [-4058822530962036113558957735524994411356374024839875405476791844324326516925 : Field, 5852100059362614845584985098022261541909346143980691326489891671321030921585 : Field, -4840154698573742532565501789862255731956493498174317200418381990571919688651 : Field, 71577923540621522166602308362662170286605786204339342029375621502658138039 : Field, 1630526119629192105940988602003704216811347521589219909349181656165466494167 : Field, 7807402158218786806372091124904574238561123446618083586948014838053032654983 : Field, -8558681900379240296346816806663462402801546068866479372657894196934284905006 : Field, -4916733727805245440019875123169648108733681133486378553671899463457684353318 : Field]
+    [17829420340877239108687448009732280677191990375576158938221412342251481978692 : Field,
+    5852100059362614845584985098022261541909346143980691326489891671321030921585 : Field,
+    17048088173265532689680903955395019356591870902241717143279822196003888806966 : Field,
+    71577923540621522166602308362662170286605786204339342029375621502658138039 : Field,
+    1630526119629192105940988602003704216811347521589219909349181656165466494167 : Field,
+    7807402158218786806372091124904574238561123446618083586948014838053032654983 : Field,
+    13329560971460034925899588938593812685746818331549554971040309989641523590611 : Field,
+    16971509144034029782226530622087626979814683266929655790026304723118124142299 : Field]
 }
 
 nr_def «SIGMA»<>() -> Field {
@@ -20,7 +29,19 @@ nr_def «to_le_bytes»<>(self : Field) -> [u8; 32] {
     let bits = (@to_le_bits<> as λ(Field) → [u1; 256])(self);
     let mut bytes = [0 : u8 ; 32];
     for i in 0 : u32 .. 32 : u32 {
-            bytes[#cast(i) : u32] = #uAdd(#uAdd(#uAdd(#uAdd(#uAdd(#uAdd(#uAdd(#cast(#arrayIndex(bits, #cast(#uMul(8 : u32, i) : u32) : u32) : u1) : u8, #uMul(2 : u8, #cast(#arrayIndex(bits, #cast(#uAdd(#uMul(8 : u32, i) : u32, 1 : u32) : u32) : u32) : u1) : u8) : u8) : u8, #uMul(4 : u8, #cast(#arrayIndex(bits, #cast(#uAdd(#uMul(8 : u32, i) : u32, 2 : u32) : u32) : u32) : u1) : u8) : u8) : u8, #uMul(8 : u8, #cast(#arrayIndex(bits, #cast(#uAdd(#uMul(8 : u32, i) : u32, 3 : u32) : u32) : u32) : u1) : u8) : u8) : u8, #uMul(16 : u8, #cast(#arrayIndex(bits, #cast(#uAdd(#uMul(8 : u32, i) : u32, 4 : u32) : u32) : u32) : u1) : u8) : u8) : u8, #uMul(32 : u8, #cast(#arrayIndex(bits, #cast(#uAdd(#uMul(8 : u32, i) : u32, 5 : u32) : u32) : u32) : u1) : u8) : u8) : u8, #uMul(64 : u8, #cast(#arrayIndex(bits, #cast(#uAdd(#uMul(8 : u32, i) : u32, 6 : u32) : u32) : u32) : u1) : u8) : u8) : u8, #uMul(128 : u8, #cast(#arrayIndex(bits, #cast(#uAdd(#uMul(8 : u32, i) : u32, 7 : u32) : u32) : u32) : u1) : u8) : u8) : u8;
+            bytes[#cast(i) : u32] =
+            #uAdd(#uAdd(#uAdd(#uAdd(#uAdd(#uAdd(#uAdd(#cast(#arrayIndex(bits, #cast(#uMul(8 : u32,
+            i) : u32) : u32) : u1) : u8, #uMul(2 : u8, #cast(#arrayIndex(bits, #cast(#uAdd(#uMul(8 :
+            u32, i) : u32, 1 : u32) : u32) : u32) : u1) : u8) : u8) : u8, #uMul(4 : u8,
+            #cast(#arrayIndex(bits, #cast(#uAdd(#uMul(8 : u32, i) : u32, 2 : u32) : u32) : u32) :
+            u1) : u8) : u8) : u8, #uMul(8 : u8, #cast(#arrayIndex(bits, #cast(#uAdd(#uMul(8 : u32,
+            i) : u32, 3 : u32) : u32) : u32) : u1) : u8) : u8) : u8, #uMul(16 : u8,
+            #cast(#arrayIndex(bits, #cast(#uAdd(#uMul(8 : u32, i) : u32, 4 : u32) : u32) : u32) :
+            u1) : u8) : u8) : u8, #uMul(32 : u8, #cast(#arrayIndex(bits, #cast(#uAdd(#uMul(8 : u32,
+            i) : u32, 5 : u32) : u32) : u32) : u1) : u8) : u8) : u8, #uMul(64 : u8,
+            #cast(#arrayIndex(bits, #cast(#uAdd(#uMul(8 : u32, i) : u32, 6 : u32) : u32) : u32) :
+            u1) : u8) : u8) : u8, #uMul(128 : u8, #cast(#arrayIndex(bits, #cast(#uAdd(#uMul(8 : u32,
+            i) : u32, 7 : u32) : u32) : u32) : u1) : u8) : u8) : u8;
     }
     ;
     bytes;
@@ -103,30 +124,12 @@ nr_def «rl»<>(u : u8) -> u8 {
     #uOr(#uShl(u, 1 : u8) : u8, top_bit) : u8;
 }
 
-lemma SLP.pure_star_iff_and [LawfulHeap α] {H : SLP α} : (⟦P⟧ ⋆ H) st ↔ P ∧ H st := by
-  simp [SLP.star, SLP.lift]
-  apply Iff.intro
-  · rintro ⟨st₁, st₂, hdis, hst, ⟨hp, rfl⟩, hH⟩
-    simp only [LawfulHeap.empty_union] at hst
-    cases hst
-    simp_all
-  · intro ⟨hP, hH⟩
-    exists ∅, st
-    simp_all
-
-lemma STHoare.pure_left_of_imp (h : P → STHoare p Γ ⟦P⟧ E Q): STHoare p Γ ⟦P⟧ E Q := by
-  simp_all [STHoare, THoare, SLP.pure_star_iff_and]
-
 nr_def «sgn0»<>(self : Field) -> u1 {
     #cast(self) : u1;
 }
 
 nr_def «Skyscraper»::«permute»<>(self : &Skyscraper<>) -> Unit {
     (*(self) as Skyscraper<>).state = (@permute<> as λ([Field; 2]) → [Field; 2])((#readRef(self) : Skyscraper<> as Skyscraper<>).state);
-}
-
-nr_def «main»<>(a : Field) -> Field {
-    a;
 }
 
 nr_def «square»<>(a : Field) -> Field {
@@ -180,4 +183,4 @@ nr_def «as_array»<>(self : [u8]) -> [u8; 32] {
 }
 
 
-def env := Lampe.Env.mk [(«from_le_bytes».name, «from_le_bytes».fn), («sgn0».name, «sgn0».fn), («rl».name, «rl».fn), («main».name, «main».fn), («RC».name, «RC».fn), («sbox».name, «sbox».fn), («permute».name, «permute».fn), («Skyscraper::permute».name, «Skyscraper::permute».fn), («SIGMA».name, «SIGMA».fn), («compress».name, «compress».fn), («Skyscraper::new».name, «Skyscraper::new».fn), («as_array».name, «as_array».fn), («bar».name, «bar».fn), («to_le_bytes».name, «to_le_bytes».fn), («rotate_left».name, «rotate_left».fn), («square».name, «square».fn), («to_le_bits».name, «to_le_bits».fn)] []
+def env := Lampe.Env.mk [(«from_le_bytes».name, «from_le_bytes».fn), («sgn0».name, «sgn0».fn), («rl».name, «rl».fn), («RC».name, «RC».fn), («sbox».name, «sbox».fn), («permute».name, «permute».fn), («Skyscraper::permute».name, «Skyscraper::permute».fn), («SIGMA».name, «SIGMA».fn), («compress».name, «compress».fn), («Skyscraper::new».name, «Skyscraper::new».fn), («as_array».name, «as_array».fn), («bar».name, «bar».fn), («to_le_bytes».name, «to_le_bytes».fn), («rotate_left».name, «rotate_left».fn), («square».name, «square».fn), («to_le_bits».name, «to_le_bits».fn)] []

@@ -5,7 +5,7 @@
    "type": "git",
    "subDir": "Lampe",
    "scope": "",
-   "rev": "b9f946d00b4020c29c26ba9fd2c848f26377c227",
+   "rev": "8891a36ba9940a4ee53b36ff917c1cd839ed03da",
    "name": "Lampe",
    "manifestFile": "lake-manifest.json",
    "inputRev": "main",
