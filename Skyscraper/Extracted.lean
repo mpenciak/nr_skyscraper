@@ -132,8 +132,11 @@ nr_def «Skyscraper»::«permute»<>(self : &Skyscraper<>) -> Unit {
     (*(self) as Skyscraper<>).state = (@permute<> as λ([Field; 2]) → [Field; 2])((#readRef(self) : Skyscraper<> as Skyscraper<>).state);
 }
 
+-- NOTE: Not extracted exactly like this, had to split things up to get the right assumptions
+-- appearing
 nr_def «square»<>(a : Field) -> Field {
-    #fMul(#fMul(a, a) : Field, (@SIGMA<> as λ() → Field)()) : Field;
+    let b = #fMul(a, a) : Field;
+    #fMul(b, (@SIGMA<> as λ() → Field)()) : Field;
 }
 
 nr_def «permute»<>(s : [Field; 2]) -> [Field; 2] {

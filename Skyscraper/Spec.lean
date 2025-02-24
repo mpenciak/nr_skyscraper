@@ -18,7 +18,6 @@ def RC : List Int :=
 def SIGMA : Int :=
     9915499612839321149637521777990102151350674507940716049588462388200839649614
 
--- DELETE: I thought I needed these
 lemma SLP.pure_star_iff_and [LawfulHeap α] {H : SLP α} : (⟦P⟧ ⋆ H) st ↔ P ∧ H st := by
   simp [SLP.star, SLP.lift]
   apply Iff.intro
@@ -58,10 +57,8 @@ theorem rl_intro : STHoare lp env ⟦v = FuncRef.decl "rl" [] HList.nil⟧
       simp [SLP.entails_self]
     · convert rl_spec
 
-#check BitVec.ofNat_lt_ofNat
-#check BitVec.toNat_ofNatLt
-
-theorem asdf (w : Nat) (b N : BitVec w) (hb : b < N) (hN : N < (2 ^ w : Nat) - 1)
+-- This is almost certainly stated incorrectly, but something like this is true
+theorem bitvec_lt (w : Nat) (b N : BitVec w) (hb : b < N) (hN : N < (2 ^ w : Nat) - 1)
     : b.toNat < N.toNat := by
   sorry
 
@@ -83,8 +80,8 @@ theorem rotateLeft_spec : STHoare lp env ⟦N < 254⟧ (rotate_left.fn.body _ h!
         simp_all
         have i_lt : i < 254 := by bv_decide
         have i_succ_lt : i + 1 < 255 := by bv_decide
-        have x := asdf 8 i N hhi (by bv_decide)
-        have y := asdf 8 N 254 h (by decide)
+        have x := bitvec_lt 8 i N hhi (by bv_decide)
+        have y := bitvec_lt 8 N 254 h (by decide)
         set iNat := BitVec.toNat i
         have : (iNat + 1) % 256 = iNat + 1 := by
           simp_all
@@ -103,6 +100,13 @@ theorem rotateLeft_spec : STHoare lp env ⟦N < 254⟧ (rotate_left.fn.body _ h!
     subst_vars
     rfl
 
+theorem star_lift_entails {α : Type _} [LawfulHeap α] (P Q : Prop) : (⟦P⟧ : SLP α) ⋆ ⟦Q⟧ ⊢ ⟦Q⟧ := by
+  intro st ⟨st1, ⟨st2, ⟨_, ⟨h12, ⟨p, h1⟩, q, h2⟩⟩⟩⟩
+  have : st = ∅ := by
+    rw [h12, h1, h2]
+    exact LawfulHeap.union_empty
+  tauto
+
 theorem rotate_left_intro : STHoare lp env (⟦v = FuncRef.decl "rotate_left" [] HList.nil⟧ ⋆ ⟦N < 254⟧)
     (Expr.call [Tp.u 8, Tp.u 8] (Tp.u 8) v h![input, N])
       fun output => output = Skyscraper.rotateLeft input N := by
@@ -115,70 +119,133 @@ theorem rotate_left_intro : STHoare lp env (⟦v = FuncRef.decl "rotate_left" []
   · fapply STHoare.consequence
     · exact ⟦N < 254⟧
     · exact fun output => ⟦output = Skyscraper.rotateLeft input N⟧
-    · unfold SLP.star
-      unfold SLP.entails
-      intros x y
-      let ⟨st1, ⟨st2,⟨h12, ⟨a, ⟨c, d⟩⟩⟩⟩⟩ := y
-      sorry
+    · apply star_lift_entails
     · intro h
       simp [SLP.entails_self]
     · convert rotateLeft_spec
+
+theorem foo {α : Type _} [LawfulHeap α] (H : SLP α) : H ⊢ H ⋆ H := by sorry
+
 
 theorem sbox_spec : STHoare lp env ⟦⟧ (sbox.fn.body _ h![] |>.body h![input])
     fun output => output = Skyscraper.sbox input := by
   simp only [Extracted.sbox]
   steps
   apply STHoare.consequence_frame_left rotate_left_intro
-  · sl
-    tauto
-  · steps
-    apply STHoare.consequence_frame_left rotate_left_intro
-    · sl
-      tauto
-    · steps
-      · apply STHoare.consequence_frame_left rotate_left_intro
-        · sl
-          tauto
-      · steps
-        · apply STHoare.consequence_frame_left rotate_left_intro
-          · sl
-            sorry
-        · steps
-          intro h
-          simp_all [Skyscraper.sbox]
-          congr
-          · sorry
-          · sorry
+  · have {x : U 8} : (⟦x = 1⟧ : SLP (State lp)) ⊢ ⟦x < 254⟧ := by sorry
+    unfold SLP.entails SLP.lift SLP.star
+    intros st a
+    rcases a with ⟨st1, ⟨st2, ⟨h1, h2, h3, st3, st4, h6, h7, h8, st5, st6, h12, h13, h14, h15⟩⟩⟩
+    use st1
+    use st2
+    refine ⟨h1, h2, ?_⟩
+    refine ⟨?_, ?_⟩
+    · use st3
+      use ∅
+      refine ⟨h6, ?_, ?_, ?_, ?_⟩
+      · sorry
+      · sorry
+      · sorry
+      · rfl
+    · sorry
+
+
+
+
+
+  -- · rename_i f1 f2 v1 v2
+  --   exact ⟦v2 = ↑1⟧ ⋆ ⟦∃ (_ : True), v1 = BitVec.not input⟧ ⋆
+  --     ⟦f1 = FuncRef.decl "rotate_left" [] HList.nil⟧ ⋆ ⟦f2 = FuncRef.decl "rotate_left" [] HList.nil⟧
+  -- · rename_i f1 f2 v1 v2
+  --   have : (⟦v2 = ↑1⟧ : SLP (State lp)) ⊢ ⟦v2 < 254⟧ := by sorry
+  --   sl
+  -- · sorry
+
+
+
+
+  · sorry
+  · sorry
+  -- · sl
+  --   sorry
+  -- · exact ⟦True⟧
+  -- · steps
+  --   apply STHoare.consequence_frame_left rotate_left_intro
+  --   · sl
+  --     tauto
+  --   · sorry
+  --   · steps
+  --     · apply STHoare.consequence_frame_left rotate_left_intro
+  --       · sl
+  --         tauto
+  --     · steps
+  --       · apply STHoare.consequence_frame_left rotate_left_intro
+  --         · sl
+  --           sorry
+  --       · steps
+  --         intro h
+  --         simp_all [Skyscraper.sbox]
+  --         congr
+  --         · sorry
+  --         · sorry
 
 theorem bar_spec : STHoare lp env ⟦⟧ (bar.fn.body _ h![] |>.body h![input])
     fun output => output = Skyscraper.bar output := by
   sorry
 
+theorem sigma_intro : STHoare lp env (⟦v = FuncRef.decl "SIGMA" [] HList.nil⟧)
+    (Expr.call [] Tp.field v h![])
+      fun output => output = Skyscraper.SIGMA := by
+  apply STHoare.callDecl_intro
+  · sl
+    tauto
+  on_goal 3 => exact Extracted.SIGMA.fn
+  all_goals try tauto
+  · simp [env, Extracted.SIGMA]
+  · fapply STHoare.consequence
+    · exact ⟦⟧
+    · exact fun output => ⟦output = Skyscraper.SIGMA⟧
+    · rintro _ ⟨_, r⟩ -- H ⊢ ⟦True⟧ should be obvious right?
+      exact ⟨.intro, r⟩
+    · intro h
+      simp [SLP.entails_self]
+    · simp [Extracted.SIGMA, Skyscraper.SIGMA]
+      steps
+      intro h
+      rename_i x y hh
+      rw [h, hh]
+      rfl
+
 theorem square_spec : STHoare lp env ⟦⟧ (square.fn.body _ h![] |>.body h![input])
     fun output => output = Skyscraper.square input := by
   simp only [square]
   steps
-  simp_all
-  fapply STHoare.callDecl_intro
-  · exact "SIGMA"
-  · exact []
-  · exact h![]
-  · exact Extracted.SIGMA.fn
-  · sl
-    intro h
-    assumption
-  · unfold env
-    simp [Extracted.SIGMA]
-  · simp [Extracted.SIGMA]
-  · simp [Extracted.SIGMA]
-  · simp [Extracted.SIGMA]
-  · simp [Extracted.SIGMA]
-    steps
-    · sorry
-    · exact fun u => True
+  · apply STHoare.consequence_frame_left sigma_intro
+    · exact SLP.entails_self
   · steps
-    simp [Skyscraper.square]
-    sorry
+    intro h
+    rename_i a b c d e f g v
+    have ⟨_, f⟩ := f
+    have ⟨_, v⟩ := v
+    rw [h, f, g, v, Skyscraper.square]
+
+theorem square_intro : STHoare lp env (⟦v = FuncRef.decl "square" [] HList.nil⟧)
+    (Expr.call [Tp.field] Tp.field v h![input])
+      fun output => output = Skyscraper.square input := by
+  apply STHoare.callDecl_intro
+  · sl
+    tauto
+  on_goal 3 => exact Extracted.square.fn
+  all_goals try tauto
+  · simp [env, Extracted.square]
+  · fapply STHoare.consequence
+    · exact ⟦⟧
+    · exact fun output => ⟦output = Skyscraper.square input⟧
+    · rintro _ ⟨_, r⟩ -- H ⊢ ⟦True⟧ should be obvious right?
+      exact ⟨.intro, r⟩
+    · intro h
+      simp [SLP.entails_self]
+    · convert square_spec
 
 theorem compress_spec : STHoare lp env ⟦⟧ (compress.fn.body _ h![] |>.body h![l, r])
     fun output => output = Skyscraper.compress l r := by
