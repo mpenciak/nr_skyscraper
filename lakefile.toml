@@ -8,5 +8,5 @@ name = "Skyscraper"
 [[require]]
 name = "Lampe"
 git = "https://github.com/reilabs/lampe/"
-rev = "main"
+rev = "mp/bitwise_builtins"
 subDir = "Lampe"

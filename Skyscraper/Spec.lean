@@ -19,41 +19,136 @@ def SIGMA : Int :=
     9915499612839321149637521777990102151350674507940716049588462388200839649614
 
 -- DELETE: I thought I needed these
--- lemma SLP.pure_star_iff_and [LawfulHeap α] {H : SLP α} : (⟦P⟧ ⋆ H) st ↔ P ∧ H st := by
---   simp [SLP.star, SLP.lift]
---   apply Iff.intro
---   · rintro ⟨st₁, st₂, hdis, hst, ⟨hp, rfl⟩, hH⟩
---     simp only [LawfulHeap.empty_union] at hst
---     cases hst
---     simp_all
---   · intro ⟨hP, hH⟩
---     exists ∅, st
---     simp_all
---
--- lemma STHoare.pure_left_of_imp (h : P → STHoare lp Γ ⟦P⟧ E Q): STHoare lp Γ ⟦P⟧ E Q := by
---   simp_all [STHoare, THoare, SLP.pure_star_iff_and]
+lemma SLP.pure_star_iff_and [LawfulHeap α] {H : SLP α} : (⟦P⟧ ⋆ H) st ↔ P ∧ H st := by
+  simp [SLP.star, SLP.lift]
+  apply Iff.intro
+  · rintro ⟨st₁, st₂, hdis, hst, ⟨hp, rfl⟩, hH⟩
+    simp only [LawfulHeap.empty_union] at hst
+    cases hst
+    simp_all
+  · intro ⟨hP, hH⟩
+    exists ∅, st
+    simp_all
+
+lemma STHoare.pure_left_of_imp (h : P → STHoare lp Γ ⟦P⟧ E Q): STHoare lp Γ ⟦P⟧ E Q := by
+  simp_all [STHoare, THoare, SLP.pure_star_iff_and]
 
 theorem rl_spec : STHoare lp env ⟦⟧ (rl.fn.body _ h![] |>.body h![input])
     fun output => output = Skyscraper.rl input := by
   simp only [rl, Skyscraper.rl]
   steps
+  intro h
   simp_all
-  apply STHoare.consequence_frame_left STHoare.uOr_intro
-  · sl
-  · steps
-    intro h
-    simp_all
-    rfl
+  rfl
 
-theorem rotateLeft_spec : STHoare lp env ⟦⟧ (rotate_left.fn.body _ h![] |>.body h![input, N])
+theorem rl_intro : STHoare lp env ⟦v = FuncRef.decl "rl" [] HList.nil⟧
+  (Expr.call [Tp.u 8] (Tp.u 8) v h![input])
+    fun output => output = Skyscraper.rl input := by
+  apply STHoare.callDecl_intro
+  · sl
+    tauto
+  on_goal 3 => exact Extracted.rl.fn
+  all_goals try tauto
+  · fapply STHoare.consequence
+    · exact ⟦⟧
+    · exact fun u => ⟦u = Skyscraper.rl input⟧
+    · rintro _ ⟨_, r⟩ -- H ⊢ ⟦True⟧ should be obvious right?
+      exact ⟨.intro, r⟩
+    · intro h
+      simp [SLP.entails_self]
+    · convert rl_spec
+
+#check BitVec.ofNat_lt_ofNat
+#check BitVec.toNat_ofNatLt
+
+theorem asdf (w : Nat) (b N : BitVec w) (hb : b < N) (hN : N < (2 ^ w : Nat) - 1)
+    : b.toNat < N.toNat := by
+  sorry
+
+theorem rotateLeft_spec : STHoare lp env ⟦N < 254⟧ (rotate_left.fn.body _ h![] |>.body h![input, N])
     fun output => output = Skyscraper.rotateLeft input N := by
   simp only [Extracted.rotate_left]
+  apply STHoare.pure_left_of_imp
+  intro h
   steps
-  sorry
+  rename_i a _
+  loop_inv fun i _ _ => [a ↦ ⟨Tp.u 8, Nat.repeat Skyscraper.rl i.toNat input⟩]
+  · intros i hlo hhi
+    steps
+    · apply STHoare.consequence_frame_left rl_intro
+      sl
+      assumption
+    · steps
+      · congr
+        simp_all
+        have i_lt : i < 254 := by bv_decide
+        have i_succ_lt : i + 1 < 255 := by bv_decide
+        have x := asdf 8 i N hhi (by bv_decide)
+        have y := asdf 8 N 254 h (by decide)
+        set iNat := BitVec.toNat i
+        have : (iNat + 1) % 256 = iNat + 1 := by
+          simp_all
+          linarith
+        rw [this]
+        rfl
+  · rename_i b c d
+    change b = 0 at c
+    bv_decide
+  · congr
+    rename_i b c d e
+    change b = 0 at d
+    rw [d]
+    rfl
+  · steps
+    subst_vars
+    rfl
+
+theorem rotate_left_intro : STHoare lp env (⟦v = FuncRef.decl "rotate_left" [] HList.nil⟧ ⋆ ⟦N < 254⟧)
+    (Expr.call [Tp.u 8, Tp.u 8] (Tp.u 8) v h![input, N])
+      fun output => output = Skyscraper.rotateLeft input N := by
+  apply STHoare.callDecl_intro
+  · sl
+    tauto
+  on_goal 3 => exact Extracted.rotate_left.fn
+  all_goals try tauto
+  · simp [env, Extracted.rotate_left]
+  · fapply STHoare.consequence
+    · exact ⟦N < 254⟧
+    · exact fun output => ⟦output = Skyscraper.rotateLeft input N⟧
+    · unfold SLP.star
+      unfold SLP.entails
+      intros x y
+      let ⟨st1, ⟨st2,⟨h12, ⟨a, ⟨c, d⟩⟩⟩⟩⟩ := y
+      sorry
+    · intro h
+      simp [SLP.entails_self]
+    · convert rotateLeft_spec
 
 theorem sbox_spec : STHoare lp env ⟦⟧ (sbox.fn.body _ h![] |>.body h![input])
-    fun output => output = Skyscraper.sbox output := by
-  sorry
+    fun output => output = Skyscraper.sbox input := by
+  simp only [Extracted.sbox]
+  steps
+  apply STHoare.consequence_frame_left rotate_left_intro
+  · sl
+    tauto
+  · steps
+    apply STHoare.consequence_frame_left rotate_left_intro
+    · sl
+      tauto
+    · steps
+      · apply STHoare.consequence_frame_left rotate_left_intro
+        · sl
+          tauto
+      · steps
+        · apply STHoare.consequence_frame_left rotate_left_intro
+          · sl
+            sorry
+        · steps
+          intro h
+          simp_all [Skyscraper.sbox]
+          congr
+          · sorry
+          · sorry
 
 theorem bar_spec : STHoare lp env ⟦⟧ (bar.fn.body _ h![] |>.body h![input])
     fun output => output = Skyscraper.bar output := by

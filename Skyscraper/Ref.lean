@@ -21,10 +21,7 @@ def rl (u : U 8) : U 8 :=
     let top_bit := u >>> 7;
     (u <<< 1) ||| top_bit
 
-def rotateLeft (u N : U 8)  : U 8 :=
-  if h : N = 0 then u else
-    have : (N - 1) < N := by bv_decide
-  rotateLeft (rl u) (N - 1)
+def rotateLeft (u N : U 8) : U 8 := Nat.repeat rl N.toNat u
 
 def sbox (v : U 8) : U 8 :=
   v ^^^ rotateLeft (rotateLeft v.not 1 &&& rotateLeft v 2 &&& rotateLeft v 3) 1
