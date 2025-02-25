@@ -124,70 +124,98 @@ theorem rotate_left_intro : STHoare lp env (⟦v = FuncRef.decl "rotate_left" []
       simp [SLP.entails_self]
     · convert rotateLeft_spec
 
-theorem foo {α : Type _} [LawfulHeap α] (H : SLP α) : H ⊢ H ⋆ H := by sorry
+
+lemma STHoare.pure_left {E : Expr (Tp.denote lp) tp} {Γ P Q} : (P → STHoare lp Γ ⟦True⟧ E Q) → STHoare lp Γ ⟦P⟧ E Q := by
+  intro h
+  apply STHoare.pure_left_of_imp
+  intro
+  apply STHoare.consequence (h_hoare := h (by assumption))
+  · simp [SLP.lift, SLP.entails]
+  · intro; apply SLP.entails_self
 
 
 theorem sbox_spec : STHoare lp env ⟦⟧ (sbox.fn.body _ h![] |>.body h![input])
     fun output => output = Skyscraper.sbox input := by
+
   simp only [Extracted.sbox]
-  steps
-  apply STHoare.consequence_frame_left rotate_left_intro
-  · have {x : U 8} : (⟦x = 1⟧ : SLP (State lp)) ⊢ ⟦x < 254⟧ := by sorry
-    unfold SLP.entails SLP.lift SLP.star
-    intros st a
-    rcases a with ⟨st1, ⟨st2, ⟨h1, h2, h3, st3, st4, h6, h7, h8, st5, st6, h12, h13, h14, h15⟩⟩⟩
-    use st1
-    use st2
-    refine ⟨h1, h2, ?_⟩
-    refine ⟨?_, ?_⟩
-    · use st3
-      use ∅
-      refine ⟨h6, ?_, ?_, ?_, ?_⟩
-      · sorry
-      · sorry
-      · sorry
-      · rfl
-    · sorry
 
+  apply STHoare.letIn_intro
+  apply STHoare.fn_intro
+  intro v; apply STHoare.pure_left; rintro rfl
 
+  apply STHoare.letIn_intro
+  apply STHoare.fn_intro
+  intro v; apply STHoare.pure_left; rintro rfl
 
+  apply STHoare.letIn_intro
+  apply STHoare.uNot_intro
+  simp only [BitVec.not, exists_const]
+  intro v; apply STHoare.pure_left; rintro rfl
 
+  apply STHoare.letIn_intro
+  apply STHoare.litU_intro
+  intro v; apply STHoare.pure_left; rintro rfl
 
-  -- · rename_i f1 f2 v1 v2
-  --   exact ⟦v2 = ↑1⟧ ⋆ ⟦∃ (_ : True), v1 = BitVec.not input⟧ ⋆
-  --     ⟦f1 = FuncRef.decl "rotate_left" [] HList.nil⟧ ⋆ ⟦f2 = FuncRef.decl "rotate_left" [] HList.nil⟧
-  -- · rename_i f1 f2 v1 v2
-  --   have : (⟦v2 = ↑1⟧ : SLP (State lp)) ⊢ ⟦v2 < 254⟧ := by sorry
-  --   sl
-  -- · sorry
+  apply STHoare.letIn_intro
+  · apply STHoare.consequence (h_hoare := rotate_left_intro) (h_post_conseq := fun _ => SLP.entails_self)
+    simp [SLP.entails, SLP.lift]
+    decide
+  intro v; apply STHoare.pure_left; rintro rfl
 
+  apply STHoare.letIn_intro
+  apply STHoare.fn_intro
+  intro v; apply STHoare.pure_left; rintro rfl
 
+  apply STHoare.letIn_intro
+  apply STHoare.litU_intro
+  intro v; apply STHoare.pure_left; rintro rfl
 
+  apply STHoare.letIn_intro
+  · apply STHoare.consequence (h_hoare := rotate_left_intro) (h_post_conseq := fun _ => SLP.entails_self)
+    simp [SLP.entails, SLP.lift]
+    decide
+  intro v; apply STHoare.pure_left; rintro rfl
 
-  · sorry
-  · sorry
-  -- · sl
-  --   sorry
-  -- · exact ⟦True⟧
-  -- · steps
-  --   apply STHoare.consequence_frame_left rotate_left_intro
-  --   · sl
-  --     tauto
-  --   · sorry
-  --   · steps
-  --     · apply STHoare.consequence_frame_left rotate_left_intro
-  --       · sl
-  --         tauto
-  --     · steps
-  --       · apply STHoare.consequence_frame_left rotate_left_intro
-  --         · sl
-  --           sorry
-  --       · steps
-  --         intro h
-  --         simp_all [Skyscraper.sbox]
-  --         congr
-  --         · sorry
-  --         · sorry
+  apply STHoare.letIn_intro
+  apply STHoare.uAnd_intro
+  simp only [BitVec.reduceAllOnes, exists_const]
+  intro v; apply STHoare.pure_left; rintro rfl
+
+  apply STHoare.letIn_intro
+  apply STHoare.fn_intro
+  intro v; apply STHoare.pure_left; rintro rfl
+
+  apply STHoare.letIn_intro
+  apply STHoare.litU_intro
+  intro v; apply STHoare.pure_left; rintro rfl
+
+  apply STHoare.letIn_intro
+  · apply STHoare.consequence (h_hoare := rotate_left_intro) (h_post_conseq := fun _ => SLP.entails_self)
+    simp [SLP.entails, SLP.lift]
+    decide
+  intro v; apply STHoare.pure_left; rintro rfl
+
+  apply STHoare.letIn_intro
+  apply STHoare.uAnd_intro
+  simp only [BitVec.reduceAllOnes, exists_const]
+  intro v; apply STHoare.pure_left; rintro rfl
+
+  apply STHoare.letIn_intro
+  apply STHoare.litU_intro
+  intro v; apply STHoare.pure_left; rintro rfl
+
+  apply STHoare.letIn_intro
+  · apply STHoare.consequence (h_hoare := rotate_left_intro) (h_post_conseq := fun _ => SLP.entails_self)
+    simp [SLP.entails, SLP.lift]
+    decide
+  intro v; apply STHoare.pure_left; rintro rfl
+
+  apply STHoare.letIn_intro
+  apply STHoare.uXor_intro
+  simp only [BitVec.xor_eq, exists_const]
+  intro v; apply STHoare.pure_left; rintro rfl
+
+  apply STHoare.var_intro
 
 theorem bar_spec : STHoare lp env ⟦⟧ (bar.fn.body _ h![] |>.body h![input])
     fun output => output = Skyscraper.bar output := by
@@ -250,4 +278,3 @@ theorem square_intro : STHoare lp env (⟦v = FuncRef.decl "square" [] HList.nil
 theorem compress_spec : STHoare lp env ⟦⟧ (compress.fn.body _ h![] |>.body h![l, r])
     fun output => output = Skyscraper.compress l r := by
   sorry
-
