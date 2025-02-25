@@ -27,14 +27,23 @@ fn rotate_left(u: u8, N: u8) -> u8 {
     result
 }
 
+// NOTE: This was written in this way to assist in the verification, originally it was
+//  (
+//      v
+//          ^ rotate_left(
+//              rotate_left(!v, 1) & rotate_left(v, 2) & rotate_left(v, 3),
+//              1,
+//          )
+//  )
+// and this was much harder to reason about for some reason...
 fn sbox(v: u8) -> u8 {
-    (
-        v
-            ^ rotate_left(
-                rotate_left(!v, 1) & rotate_left(v, 2) & rotate_left(v, 3),
-                1,
-            )
-    )
+    let x1 = !v;
+    let x2 = rotate_left(x1, 1);
+    let x3 = rotate_left(v, 2);
+    let x4 = rotate_left(v, 3);
+    let x5 = x2 & x3 & x4;
+    let x6 = rotate_left(x5, 1);
+    v ^ x6
 }
 
 // NOTE: adapted from stdlib

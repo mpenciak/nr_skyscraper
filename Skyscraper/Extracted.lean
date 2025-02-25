@@ -52,10 +52,6 @@ nr_def «compress»<>(l : Field, r : Field) -> Field {
     #fAdd(#arrayIndex(x, #cast(0 : Field) : u32) : Field, l) : Field;
 }
 
-nr_def «sbox»<>(v : u8) -> u8 {
-    #uXor(v, (@rotate_left<> as λ(u8, u8) → u8)(#uAnd(#uAnd((@rotate_left<> as λ(u8, u8) → u8)(#uNot(v) : u8, 1 : u8), (@rotate_left<> as λ(u8, u8) → u8)(v, 2 : u8)) : u8, (@rotate_left<> as λ(u8, u8) → u8)(v, 3 : u8)) : u8, 1 : u8)) : u8;
-}
-
 nr_def «from_le_bytes»<>(bytes : [u8; 32]) -> Field {
     let mut v = 1 : Field;
     let mut result = 0 : Field;
@@ -117,6 +113,16 @@ nr_def «bar»<>(a : Field) -> Field {
         ;
     let new_bytes_array = (@as_array<> as λ([u8]) → [u8; 32])(new_bytes);
     (@from_le_bytes<> as λ([u8; 32]) → Field)(new_bytes_array);
+}
+
+nr_def «sbox»<>(v : u8) -> u8 {
+    let x1 = #uNot(v) : u8;
+    let x2 = (@rotate_left<> as λ(u8, u8) → u8)(x1, 1 : u8);
+    let x3 = (@rotate_left<> as λ(u8, u8) → u8)(v, 2 : u8);
+    let x4 = (@rotate_left<> as λ(u8, u8) → u8)(v, 3 : u8);
+    let x5 = #uAnd(#uAnd(x2, x3) : u8, x4) : u8;
+    let x6 = (@rotate_left<> as λ(u8, u8) → u8)(x5, 1 : u8);
+    #uXor(v, x6) : u8;
 }
 
 nr_def «rl»<>(u : u8) -> u8 {
