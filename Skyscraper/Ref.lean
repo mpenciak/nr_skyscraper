@@ -26,12 +26,14 @@ def rotateLeft (u N : U 8) : U 8 := Nat.repeat rl N.toNat u
 def sbox (v : U 8) : U 8 :=
   v ^^^ rotateLeft (rotateLeft v.not 1 &&& rotateLeft v 2 &&& rotateLeft v 3) 1
 
+def refMap (arr : List.Vector (U 8) N) (f : U 8 → U 8) : List.Vector (U 8) N := arr.map f
+
 def bar (a : bnField) : bnField :=
   let bytes := a.toLeBytes
   let left := bytes.take 16
   let right := bytes.drop 16
-  let new_left := left.map sbox
-  let new_right := right.map sbox
+  let new_left := refMap left sbox -- left.map sbox
+  let new_right := refMap right sbox -- right.map sbox
   let new_bytes := new_right.append new_left
   bnField.fromLeBytes new_bytes
 

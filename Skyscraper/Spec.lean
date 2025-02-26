@@ -316,8 +316,77 @@ theorem bar_spec : STHoare lp env ⟦⟧ (bar.fn.body _ h![] |>.body h![input])
   sl
   intro v; apply STHoare.pure_left_nontriv; rintro rfl
 
-  sorry
+  apply STHoare.letIn_intro
+  apply STHoare.consequence_frame_left (STHoare.loop_inv_intro (fun u _ _ => ⟦u = u⟧) (fun x hlo hhi => ?_))
+  sl
+  decide
+  · apply STHoare.letIn_intro
+    apply STHoare.consequence_frame_left STHoare.fn_intro
+    sl
+    intro v; apply STHoare.pure_left_nontriv; rintro rfl
 
+    apply STHoare.letIn_intro
+    apply STHoare.cast_intro; simp?
+    intro y
+
+    apply STHoare.letIn_intro
+    apply STHoare.consequence_frame_left STHoare.arrayIndex_intro
+    sl
+    intro v; simp only; apply STHoare.pure_left_nontriv
+    intro vv; apply STHoare.pure_left; rintro rfl
+
+    apply STHoare.letIn_intro
+    apply STHoare.callDecl_intro
+    · sl
+      intro v; exact rfl
+    on_goal 3 => exact Extracted.sbox.fn
+    all_goals try tauto
+    fapply STHoare.consequence
+    · exact ⟦⟧
+    · exact fun output => ⟦output = Skyscraper.sbox v⟧
+    · rintro _ ⟨_, r⟩
+      exact ⟨.intro, r⟩
+    · intro h
+      exact SLP.entails_self
+    exact sbox_spec
+    intro v; apply STHoare.pure_left; rintro rfl
+
+    apply STHoare.letIn_intro
+    apply STHoare.cast_intro; simp?
+    intro vvv
+
+    apply STHoare.letIn_intro
+    apply STHoare.consequence_frame_left STHoare.modifyLens_intro
+    · sorry
+    · sorry
+    · sorry
+    intro v; simp;
+
+
+  intro u1
+  apply STHoare.letIn_intro
+  apply STHoare.consequence_frame_left STHoare.litU_intro
+  sl
+  intro v; apply STHoare.pure_left_nontriv; rintro rfl
+  apply STHoare.pure_left_nontriv; intro hlo
+
+  apply STHoare.letIn_intro
+  apply STHoare.consequence_frame_left STHoare.litU_intro
+  sl
+  intro v; apply STHoare.pure_left_nontriv; rintro rfl
+
+  apply STHoare.letIn_intro
+  apply STHoare.consequence_frame_left (STHoare.loop_inv_intro (fun u _ _ => ⟦u = u⟧) (fun x hlo
+  hhi=> sorry))
+  sl
+  decide
+  intro u2
+
+  apply STHoare.letIn_intro
+  steps
+  intro v; apply STHoare.pure_left_nontriv; rintro rfl
+  apply STHoare.pure_left_nontriv; intro h
+  steps
 
 theorem bar_intro : STHoare lp env (⟦v = FuncRef.decl "bar" [] HList.nil⟧)
     (Expr.call [Tp.field] (Tp.field) v h![input])
