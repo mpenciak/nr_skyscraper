@@ -32,6 +32,19 @@ lemma SLP.pure_star_iff_and [LawfulHeap α] {H : SLP α} : (⟦P⟧ ⋆ H) st �
 lemma STHoare.pure_left_of_imp (h : P → STHoare lp Γ ⟦P⟧ E Q): STHoare lp Γ ⟦P⟧ E Q := by
   simp_all [STHoare, THoare, SLP.pure_star_iff_and]
 
+lemma STHoare.pure_left {E : Expr (Tp.denote lp) tp} {Γ P Q} : (P → STHoare lp Γ ⟦True⟧ E Q) → STHoare lp Γ ⟦P⟧ E Q := by
+  intro h
+  apply STHoare.pure_left_of_imp
+  intro
+  apply STHoare.consequence (h_hoare := h (by assumption))
+  · simp [SLP.lift, SLP.entails]
+  · intro; apply SLP.entails_self
+
+lemma STHoare.pure_left_nontriv {E : Expr (Tp.denote lp) tp} {Γ P Q}
+    : (P → STHoare lp Γ H E Q) → STHoare lp Γ (⟦P⟧ ⋆ H) E Q := by
+  intro h
+  simp_all only [STHoare, THoare, SLP.star_assoc, SLP.pure_star_iff_and, implies_true]
+
 theorem rl_spec : STHoare lp env ⟦⟧ (rl.fn.body _ h![] |>.body h![input])
     fun output => output = Skyscraper.rl input := by
   simp only [rl, Skyscraper.rl]
@@ -124,34 +137,47 @@ theorem rotate_left_intro : STHoare lp env (⟦v = FuncRef.decl "rotate_left" []
       simp [SLP.entails_self]
     · convert rotateLeft_spec
 
+
 theorem sbox_spec : STHoare lp env ⟦⟧ (sbox.fn.body _ h![] |>.body h![input])
     fun output => output = Skyscraper.sbox input := by
-
   simp only [Extracted.sbox]
 
   apply STHoare.letIn_intro
-  apply STHoare.fn_intro
-  intro v; apply STHoare.pure_left; rintro rfl
-
-  apply STHoare.letIn_intro
-  apply STHoare.fn_intro
-  intro v; apply STHoare.pure_left; rintro rfl
-
-  apply STHoare.letIn_intro
   apply STHoare.uNot_intro
+  -- intro v1; apply STHoare.pure_left
   simp only [BitVec.not, exists_const]
-  intro v; apply STHoare.pure_left; rintro rfl
+  intro v2; apply STHoare.pure_left; rintro rfl
+
+  apply STHoare.letIn_intro
+  apply STHoare.fn_intro
+  intro v3; apply STHoare.pure_left; rintro rfl
 
   apply STHoare.letIn_intro
   apply STHoare.litU_intro
-  intro v; apply STHoare.pure_left; rintro rfl
+  intro v4; apply STHoare.pure_left; rintro rfl
 
   apply STHoare.letIn_intro
-  · apply STHoare.consequence (h_hoare := rotate_left_intro) (h_post_conseq := fun _ => SLP.entails_self)
-    simp [SLP.entails, SLP.lift]
-    decide
-  intro v; apply STHoare.pure_left; rintro rfl
+  apply STHoare.consequence (h_hoare := rotate_left_intro)
+    (h_post_conseq := fun _ => SLP.entails_self)
+  simp [SLP.entails, SLP.lift]
+  decide
+  intro v5; apply STHoare.pure_left; rintro rfl
 
+  intro v6; apply STHoare.pure_left; simp only [forall_const]
+  apply STHoare.letIn_intro
+  apply STHoare.fn_intro
+  intro v7; apply STHoare.pure_left; rintro rfl
+
+  apply STHoare.letIn_intro
+  apply STHoare.litU_intro
+  intro v8; apply STHoare.pure_left; rintro rfl
+
+  apply STHoare.letIn_intro
+  apply STHoare.consequence (h_hoare := rotate_left_intro) (h_post_conseq := fun _ => SLP.entails_self)
+  simp [SLP.entails, SLP.lift]
+  decide
+
+  intro v9; apply STHoare.pure_left; rintro rfl
   apply STHoare.letIn_intro
   apply STHoare.fn_intro
   intro v; apply STHoare.pure_left; rintro rfl
@@ -161,9 +187,14 @@ theorem sbox_spec : STHoare lp env ⟦⟧ (sbox.fn.body _ h![] |>.body h![input]
   intro v; apply STHoare.pure_left; rintro rfl
 
   apply STHoare.letIn_intro
-  · apply STHoare.consequence (h_hoare := rotate_left_intro) (h_post_conseq := fun _ => SLP.entails_self)
-    simp [SLP.entails, SLP.lift]
-    decide
+  apply STHoare.consequence (h_hoare := rotate_left_intro) (h_post_conseq := fun _ => SLP.entails_self)
+  simp [SLP.entails, SLP.lift]
+  decide
+  intro v; apply STHoare.pure_left; rintro rfl
+
+  apply STHoare.letIn_intro
+  apply STHoare.uAnd_intro
+  simp only [BitVec.reduceAllOnes, exists_const]
   intro v; apply STHoare.pure_left; rintro rfl
 
   apply STHoare.letIn_intro
@@ -180,24 +211,9 @@ theorem sbox_spec : STHoare lp env ⟦⟧ (sbox.fn.body _ h![] |>.body h![input]
   intro v; apply STHoare.pure_left; rintro rfl
 
   apply STHoare.letIn_intro
-  · apply STHoare.consequence (h_hoare := rotate_left_intro) (h_post_conseq := fun _ => SLP.entails_self)
-    simp [SLP.entails, SLP.lift]
-    decide
-  intro v; apply STHoare.pure_left; rintro rfl
-
-  apply STHoare.letIn_intro
-  apply STHoare.uAnd_intro
-  simp only [BitVec.reduceAllOnes, exists_const]
-  intro v; apply STHoare.pure_left; rintro rfl
-
-  apply STHoare.letIn_intro
-  apply STHoare.litU_intro
-  intro v; apply STHoare.pure_left; rintro rfl
-
-  apply STHoare.letIn_intro
-  · apply STHoare.consequence (h_hoare := rotate_left_intro) (h_post_conseq := fun _ => SLP.entails_self)
-    simp [SLP.entails, SLP.lift]
-    decide
+  apply STHoare.consequence (h_hoare := rotate_left_intro) (h_post_conseq := fun _ => SLP.entails_self)
+  simp [SLP.entails, SLP.lift]
+  decide
   intro v; apply STHoare.pure_left; rintro rfl
 
   apply STHoare.letIn_intro
@@ -207,9 +223,119 @@ theorem sbox_spec : STHoare lp env ⟦⟧ (sbox.fn.body _ h![] |>.body h![input]
 
   apply STHoare.var_intro
 
+theorem sbox_intro : STHoare lp env (⟦v = FuncRef.decl "sbox" [] HList.nil⟧)
+    (Expr.call [Tp.u 8] (Tp.u 8) v h![input])
+    fun output => output = Skyscraper.sbox input := by
+  apply STHoare.callDecl_intro
+  · sl
+    exact id
+  on_goal 3 => exact Extracted.sbox.fn
+  all_goals try tauto
+  fapply STHoare.consequence
+  · exact ⟦⟧
+  · exact fun output => ⟦output = Skyscraper.sbox input⟧
+  · rintro _ ⟨_, r⟩
+    exact ⟨.intro, r⟩
+  · intro h
+    exact SLP.entails_self
+  exact sbox_spec
+
+theorem to_le_bytes_spec : STHoare lp env ⟦⟧ (to_le_bytes.fn.body _ h![] |>.body h![input])
+    fun output => output.toList = toLeBytes input := by sorry -- TODO: This isn't stated correctly
+
+theorem to_le_bytes_intro : STHoare lp env (⟦v = FuncRef.decl "to_le_bytes" [] HList.nil⟧)
+    (Expr.call [Tp.field] (Tp.array (Tp.u 8) 32) v h![input])
+    fun output => output.toList = toLeBytes input := by
+  apply STHoare.callDecl_intro
+  · sl
+    exact id
+  on_goal 3 => exact Extracted.to_le_bytes.fn
+  all_goals try tauto
+  · simp [to_le_bytes, env]
+  fapply STHoare.consequence
+  · exact ⟦⟧
+  · exact fun output => ⟦output.toList = toLeBytes input⟧
+  · rintro _ ⟨_, r⟩
+    exact ⟨.intro, r⟩
+  · intro h
+    exact SLP.entails_self
+  exact to_le_bytes_spec
+
 theorem bar_spec : STHoare lp env ⟦⟧ (bar.fn.body _ h![] |>.body h![input])
-    fun output => output = Skyscraper.bar output := by
+    fun output => output = Skyscraper.bar input := by
+  simp only [Extracted.bar]
+
+  apply STHoare.letIn_intro
+  apply STHoare.fn_intro
+  intro v; apply STHoare.pure_left; rintro rfl
+
+  apply STHoare.letIn_intro
+  apply STHoare.consequence (h_hoare := to_le_bytes_intro)
+    (h_post_conseq := fun _ => SLP.entails_self)
+  simp [SLP.entails, SLP.lift]
+  intro v; apply STHoare.pure_left; intro h
+
+  apply STHoare.letIn_intro
+  apply STHoare.litU_intro
+  intro v; apply STHoare.pure_left; rintro rfl
+
+  apply STHoare.letIn_intro
+  apply STHoare.mkArray_intro
+  decide
+  simp only [Nat.cast_ofNat, BitVec.ofNat_eq_ofNat, List.reduceReplicate, BitVec.reduceToNat,
+    BitVec.toNat_ofNat, Nat.reducePow, Nat.reduceMod, exists_true_left]
+  intro v; apply STHoare.pure_left; rintro rfl
+
+  apply STHoare.letIn_intro
+  apply STHoare.ref_intro
+  intro left
+
+  apply STHoare.letIn_intro
+  apply STHoare.consequence_frame_left STHoare.litU_intro
+  sl
+  intro v; apply STHoare.pure_left_nontriv; rintro rfl
+
+  apply STHoare.letIn_intro
+  apply STHoare.consequence_frame_left STHoare.mkArray_intro
+  sl
+  decide
+  intro v; simp?; apply STHoare.pure_left_nontriv; rintro rfl
+
+  apply STHoare.letIn_intro
+  apply STHoare.consequence_frame_left STHoare.ref_intro
+  sl
+  intro right
+
+  apply STHoare.letIn_intro
+  apply STHoare.consequence_frame_left STHoare.litU_intro
+  sl
+  intro v; apply STHoare.pure_left_nontriv; rintro rfl
+
+  apply STHoare.letIn_intro
+  apply STHoare.consequence_frame_left STHoare.litU_intro
+  sl
+  intro v; apply STHoare.pure_left_nontriv; rintro rfl
+
   sorry
+
+
+theorem bar_intro : STHoare lp env (⟦v = FuncRef.decl "bar" [] HList.nil⟧)
+    (Expr.call [Tp.field] (Tp.field) v h![input])
+    fun output => output = Skyscraper.bar input := by
+  apply STHoare.callDecl_intro
+  · sl
+    exact id
+  on_goal 3 => exact Extracted.bar.fn
+  all_goals try tauto
+  · simp [env, Extracted.bar]
+  fapply STHoare.consequence
+  · exact ⟦⟧
+  · exact fun output => ⟦output = Skyscraper.bar input⟧
+  · rintro _ ⟨_, r⟩
+    exact ⟨.intro, r⟩
+  · intro h
+    exact SLP.entails_self
+  exact bar_spec
 
 theorem sigma_intro : STHoare lp env (⟦v = FuncRef.decl "SIGMA" [] HList.nil⟧)
     (Expr.call [] Tp.field v h![])

@@ -59,7 +59,7 @@ def permute (s : State) : State :=
 
 namespace State
 
-def new (iv : List (U 8)) : State :=
+def new (iv : List.Vector (U 8) 32) : State :=
   let felt := bnField.fromLeBytes iv
   { left := 0, right := felt }
 

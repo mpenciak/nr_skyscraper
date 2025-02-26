@@ -18,14 +18,18 @@ instance : Repr bnField where
 
 namespace bnField
 
-def fromLeBytes (b : List (U 8)) : bnField :=
+def fromLeBytes (b : List.Vector (U 8) 32) : bnField :=
   let rec aux (b : List (U 8)) (acc : bnField) : bnField :=
     match b with
     | [] => acc
     | b :: bs => aux bs (256 * acc + b.toNat)
-  aux b 0
+  aux b.toList 0
 
-def toLeBytes (f : bnField) : List (U 8) := Lampe.toLeBytes f
+def toLeBytes (f : bnField) : List.Vector (U 8) 32 := ⟨padEnd 32 (Lampe.toLeBytes f), by
+  unfold padEnd
+  simp
+  have : (Lampe.toLeBytes f).length <= 32 := by sorry -- TODO: This could take some lemmas
+  simp only [this, add_tsub_cancel_of_le]⟩
 
 end bnField
 
