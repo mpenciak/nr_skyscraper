@@ -32,6 +32,10 @@ lemma SLP.pure_star_iff_and [LawfulHeap α] {H : SLP α} : (⟦P⟧ ⋆ H) st �
 lemma STHoare.pure_left_of_imp (h : P → STHoare lp Γ ⟦P⟧ E Q): STHoare lp Γ ⟦P⟧ E Q := by
   simp_all [STHoare, THoare, SLP.pure_star_iff_and]
 
+-- lemma STHoare.exists_left_of_imp (h : P → STHoare lp Γ ⟦P⟧ E Q)
+--     : STHoare lp Γ (SLP.exists' fun h => ⟦P⟧) E Q := by
+--   sorry
+
 lemma STHoare.pure_left {E : Expr (Tp.denote lp) tp} {Γ P Q} : (P → STHoare lp Γ ⟦True⟧ E Q) → STHoare lp Γ ⟦P⟧ E Q := by
   intro h
   apply STHoare.pure_left_of_imp
@@ -45,30 +49,20 @@ lemma STHoare.pure_left_nontriv {E : Expr (Tp.denote lp) tp} {Γ P Q}
   intro h
   simp_all only [STHoare, THoare, SLP.star_assoc, SLP.pure_star_iff_and, implies_true]
 
-theorem RC_spec : STHoare lp env H (RC.fn.body _ h![] |>.body h![])
+theorem RC_spec : STHoare lp env ⟦⟧ (RC.fn.body _ h![] |>.body h![])
     fun output => output = ⟨RC, by decide⟩ := by
   simp only [Extracted.RC]
-  -- steps
-  -- decide
-  -- simp_all
-  -- unfold SLP.forall' SLP.star SLP.entails SLP.lift
-  -- simp
   steps
   decide
-  intro st1; simp_all
-  intro v
-  unfold SLP.forall'
-  intro x
-  unfold SLP.wand
-  intro st2 stdisj  h
-  unfold SLP.star
-  use st1
-  use st2
-  refine ⟨stdisj, rfl, ?_, ?_⟩
-  · unfold _root_.RC
-    simp
-    sorry
-  · unfold SLP.top; exact .intro
+  unfold _root_.RC
+  intro h; simp_all
+  congr
+
+theorem RC_spec' : STHoare lp env H (RC.fn.body _ h![] |>.body h![])
+    (fun output => ⟦output = ⟨RC, by decide⟩⟧ ⋆ H):= by
+  nth_rewrite 1 [← SLP.star_true (H := H), SLP.star_comm]
+  apply STHoare.frame
+  exact RC_spec
 
 theorem RC_intro : STHoare lp env ⟦v = FuncRef.decl "RC" [] HList.nil⟧
     (Expr.call [] (Tp.array Tp.field 8) v h![])
@@ -88,6 +82,11 @@ theorem RC_intro : STHoare lp env ⟦v = FuncRef.decl "RC" [] HList.nil⟧
     simp [_root_.RC, SLP.entails_self]
   convert RC_spec
 
+theorem RC_intro' : STHoare lp env (⟦v = FuncRef.decl "RC" [] HList.nil⟧ ⋆ H)
+    (Expr.call [] (Tp.array Tp.field 8) v h![])
+    fun output => ⟦output = ⟨RC, by decide⟩⟧ ⋆ H := by
+  apply STHoare.frame
+  exact RC_intro
 
 theorem rl_spec : STHoare lp env ⟦⟧ (rl.fn.body _ h![] |>.body h![input])
     fun output => output = Skyscraper.rl input := by
@@ -287,6 +286,7 @@ theorem sbox_intro : STHoare lp env (⟦v = FuncRef.decl "sbox" [] HList.nil⟧)
 theorem to_le_bytes_spec : STHoare lp env ⟦⟧ (to_le_bytes.fn.body _ h![] |>.body h![input])
     fun output => output.toList = toLeBytes input := by sorry -- TODO: This isn't stated correctly
 
+#check Tp.ref
 theorem to_le_bytes_intro : STHoare lp env (⟦v = FuncRef.decl "to_le_bytes" [] HList.nil⟧)
     (Expr.call [Tp.field] (Tp.array (Tp.u 8) 32) v h![input])
     fun output => output.toList = toLeBytes input := by
@@ -362,7 +362,7 @@ theorem bar_spec : STHoare lp env ⟦⟧ (bar.fn.body _ h![] |>.body h![input])
 
   apply STHoare.letIn_intro
   apply STHoare.consequence_frame_left (STHoare.loop_inv_intro
-      (fun u _ _ => ⟦u = u⟧)  -- Definitely not the right loop invariant,
+      (fun u _ _ => left = ⟨0⟩ )-- SLP.exists' fun b : List.Vector (U 8) 16 => ⟦True⟧)-- Definitely not the right loop invariant,
       (fun x hlo hhi => ?_))
   sl
   decide
@@ -405,9 +405,9 @@ theorem bar_spec : STHoare lp env ⟦⟧ (bar.fn.body _ h![] |>.body h![input])
     apply STHoare.consequence_frame_left STHoare.modifyLens_intro
     · sorry
     · sorry
-    · sorry
+    · exact ⟦vvv = vvv⟧
     intro v; simp;
-    sorry
+    apply STHoare.consequence_frame_left STHoare.var_intro
 
   intro u1
   apply STHoare.letIn_intro
@@ -618,24 +618,131 @@ theorem permute_spec : STHoare lp env ⟦⟧ (permute.fn.body _ h![] |>.body h![
   all_goals try tauto
   fapply STHoare.consequence
   · rename_i x
-    exact ⟦{ toFin := ⟨1, by sorry⟩ } = x⟧
-  · exact fun u => ⟦u = ⟨RC, by decide⟩⟧
+    exact ⟦{ toFin := ⟨1, by decide⟩ } = x⟧
+  · rename_i x
+    exact fun u => ⟦u = ⟨RC, by decide⟩⟧ ⋆ ⟦{ toFin := ⟨1, by decide⟩ } = x⟧
   · rintro st ⟨_, r⟩
     convert r
   · intro h
     exact SLP.entails_self
-  ·
-
-
-  intro v; simp; apply STHoare.pure_left; rintro rfl
+  · apply RC_spec'
+  intro v; simp; apply STHoare.pure_left_nontriv; rintro rfl; apply STHoare.pure_left; rintro rfl
 
   apply STHoare.letIn_intro
   apply STHoare.litField_intro
   intro v; apply STHoare.pure_left; rintro rfl
 
   apply STHoare.letIn_intro
-  apply STHoare.
+  apply STHoare.cast_intro
+  intro v; simp
 
+  apply STHoare.letIn_intro
+  apply STHoare.consequence_frame_left STHoare.arrayIndex_intro
+  sl
+  intro v; simp; apply STHoare.pure_left_nontriv; intro hv; apply STHoare.pure_left; rintro rfl
+
+  apply STHoare.letIn_intro
+  apply STHoare.fAdd_intro
+  intro v; simp; apply STHoare.pure_left; rintro rfl
+
+  apply STHoare.letIn_intro
+  apply STHoare.mkTuple_intro
+  intro v; simp; apply STHoare.pure_left; rintro rfl
+
+  apply STHoare.letIn_intro
+  apply STHoare.getLens_intro
+  intro v; simp; apply STHoare.pure_left; rintro rfl
+
+  apply STHoare.letIn_intro
+  apply STHoare.getLens_intro
+  intro v; apply STHoare.pure_left; intro hhh; simp at hhh; subst_vars
+
+  apply STHoare.letIn_intro
+  apply STHoare.fn_intro
+  intro v; apply STHoare.pure_left; rintro rfl
+
+  apply STHoare.letIn_intro
+  apply STHoare.consequence_frame_left bar_intro
+  sl
+  intro v; apply STHoare.pure_left_nontriv; rintro rfl;
+
+  apply STHoare.letIn_intro
+  apply STHoare.fAdd_intro
+  intro v; apply STHoare.pure_left; simp; rintro rfl
+
+  apply STHoare.letIn_intro
+  apply STHoare.fn_intro
+  intro v; apply STHoare.pure_left; rintro rfl
+
+  apply STHoare.letIn_intro
+  apply STHoare.consequence_frame_left RC_intro
+  sl
+  intro v; apply STHoare.pure_left_nontriv; rintro rfl
+
+  apply STHoare.letIn_intro
+  apply STHoare.litField_intro
+  intro v; apply STHoare.pure_left; rintro rfl
+
+  apply STHoare.letIn_intro
+  apply STHoare.cast_intro
+  intro v
+
+  apply STHoare.letIn_intro
+  apply STHoare.consequence_frame_left STHoare.arrayIndex_intro
+  simp; exact SLP.entails_self
+  intro v; simp; apply STHoare.pure_left_nontriv; intro hhv
+
+  apply STHoare.letIn_intro
+  apply STHoare.consequence_frame_left STHoare.fAdd_intro
+  simp; exact SLP.entails_self
+  intro v; apply STHoare.pure_left_nontriv; simp; rintro rfl
+
+  apply STHoare.letIn_intro
+  apply STHoare.consequence_frame_left STHoare.mkTuple_intro
+  simp; exact SLP.entails_self
+  intro v; apply STHoare.pure_left_nontriv; simp; rintro rfl
+
+  apply STHoare.letIn_intro
+  apply STHoare.consequence_frame_left STHoare.getLens_intro
+  simp; exact SLP.entails_self
+  intro v; apply STHoare.pure_left_nontriv; simp; rintro rfl
+
+  apply STHoare.letIn_intro
+  apply STHoare.consequence_frame_left STHoare.getLens_intro
+  simp; exact SLP.entails_self
+  intro v; apply STHoare.pure_left_nontriv; simp; rintro rfl
+
+  apply STHoare.letIn_intro
+  apply STHoare.consequence_frame_left STHoare.fn_intro
+  simp; exact SLP.entails_self
+  intro v;
+
+  apply STHoare.letIn_intro
+  apply STHoare.consequence_frame_left bar_intro
+  exact SLP.entails_self
+  intro v; apply STHoare.pure_left_nontriv; rintro rfl
+
+  apply STHoare.letIn_intro
+  apply STHoare.consequence_frame_left STHoare.fAdd_intro
+  simp; exact SLP.entails_self
+  intro v; apply STHoare.pure_left_nontriv; simp; rintro rfl
+
+  apply STHoare.letIn_intro
+  apply STHoare.consequence_frame_left STHoare.fn_intro
+  simp; exact SLP.entails_self
+  intro v; apply STHoare.pure_left_nontriv; rintro rfl
+
+  apply STHoare.letIn_intro
+  apply STHoare.consequence_frame_left RC_intro
+  simp; exact SLP.entails_self
+  intro v; apply STHoare.pure_left_nontriv; rintro rfl
+
+  apply STHoare.letIn_intro
+  apply STHoare.consequence_frame_left STHoare.litField_intro
+  simp; exact SLP.entails_self
+  intro v; apply STHoare.pure_left_nontriv; rintro rfl
+
+  -- etc...
 
 theorem compress_spec : STHoare lp env ⟦⟧ (compress.fn.body _ h![] |>.body h![l, r])
     fun output => output = Skyscraper.compress l r := by
